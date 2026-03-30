@@ -1,7 +1,32 @@
 import { useState } from 'react'
+import dayjs from 'dayjs'
 
 const UNITS = ['таблетки', 'мл', 'упаковки']
 const CATEGORIES = ['Обезболивающее', 'Антибиотик', 'Витамины', 'Перевязка', 'Другое']
+
+const MONTHS = [
+  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
+]
+
+const CURRENT_YEAR = dayjs().year()
+const YEARS = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR + i)
+
+// Parse YYYY-MM-DD → { month, year } (1-based month)
+function parseExpiry(dateStr) {
+  if (!dateStr) return { month: '', year: '' }
+  const d = dayjs(dateStr)
+  if (!d.isValid()) return { month: '', year: '' }
+  return { month: d.month() + 1, year: d.year() }
+}
+
+// Build YYYY-MM-DD from month+year (last day of month)
+function buildExpiry(month, year) {
+  if (!month || !year) return ''
+  return dayjs(`${year}-${String(month).padStart(2, '0')}-01`)
+    .endOf('month')
+    .format('YYYY-MM-DD')
+}
 
 function getInitialForm(medicine) {
   if (!medicine) {
@@ -10,17 +35,20 @@ function getInitialForm(medicine) {
       quantity: '',
       unit: 'таблетки',
       location: '',
-      expiry_date: '',
+      expiry_month: '',
+      expiry_year: '',
       category: 'Другое',
       notes: '',
     }
   }
+  const { month, year } = parseExpiry(medicine.expiry_date)
   return {
     name: medicine.name || '',
     quantity: medicine.quantity !== undefined ? String(medicine.quantity) : '',
     unit: medicine.unit || 'таблетки',
     location: medicine.location || '',
-    expiry_date: medicine.expiry_date || '',
+    expiry_month: month,
+    expiry_year: year,
     category: medicine.category || 'Другое',
     notes: medicine.notes || '',
   }
@@ -88,7 +116,7 @@ export default function FormScreen({
     const errs = {}
     if (!form.name.trim()) errs.name = t['validation.name_required']
     if (form.quantity === '' || isNaN(Number(form.quantity))) errs.quantity = t['validation.quantity_required']
-    if (!form.expiry_date) errs.expiry_date = t['validation.expiry_required']
+    if (!form.expiry_month || !form.expiry_year) errs.expiry = t['validation.expiry_required']
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -102,7 +130,7 @@ export default function FormScreen({
       quantity: Number(form.quantity),
       unit: form.unit,
       location: form.location.trim(),
-      expiry_date: form.expiry_date,
+      expiry_date: buildExpiry(form.expiry_month, form.expiry_year),
       category: useCustomCategory ? customCategory.trim() : form.category,
       notes: form.notes.trim(),
     }
@@ -236,14 +264,30 @@ export default function FormScreen({
           {/* Expiry date */}
           <div>
             <label className="block text-sm text-gray-500 mb-1">{t['field.expiry']} *</label>
-            <input
-              type="date"
-              value={form.expiry_date}
-              onChange={(e) => setField('expiry_date', e.target.value)}
-              className={inputClass('expiry_date')}
-            />
-            {errors.expiry_date && (
-              <p className="text-red-500 text-xs mt-1">{errors.expiry_date}</p>
+            <div className="flex gap-2">
+              <select
+                value={form.expiry_month}
+                onChange={(e) => setField('expiry_month', e.target.value ? Number(e.target.value) : '')}
+                className={`h-11 border rounded-lg px-3 flex-1 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white appearance-none ${errors.expiry ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+              >
+                <option value="">Месяц</option>
+                {MONTHS.map((name, i) => (
+                  <option key={i + 1} value={i + 1}>{name}</option>
+                ))}
+              </select>
+              <select
+                value={form.expiry_year}
+                onChange={(e) => setField('expiry_year', e.target.value ? Number(e.target.value) : '')}
+                className={`h-11 border rounded-lg px-3 w-28 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white appearance-none ${errors.expiry ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+              >
+                <option value="">Год</option>
+                {YEARS.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+            {errors.expiry && (
+              <p className="text-red-500 text-xs mt-1">{errors.expiry}</p>
             )}
           </div>
 
