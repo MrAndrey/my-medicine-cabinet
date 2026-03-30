@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import dayjs from 'dayjs'
 
-const UNITS = ['таблетки', 'мл', 'упаковки']
+const PRESET_UNITS = ['таблетки', 'мл', 'упаковки', 'флакон']
 const CATEGORIES = ['Обезболивающее', 'Антибиотик', 'Витамины', 'Перевязка', 'Другое']
 
 const MONTHS = [
@@ -10,7 +10,7 @@ const MONTHS = [
 ]
 
 const CURRENT_YEAR = dayjs().year()
-const YEARS = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR + i)
+const YEARS = Array.from({ length: CURRENT_YEAR - 2020 + 11 }, (_, i) => 2020 + i)
 
 // Parse YYYY-MM-DD → { month, year } (1-based month)
 function parseExpiry(dateStr) {
@@ -34,6 +34,8 @@ function getInitialForm(medicine) {
       name: '',
       quantity: '',
       unit: 'таблетки',
+      unit_custom: '',
+      pack_count: '',
       location: '',
       expiry_month: '',
       expiry_year: '',
@@ -42,10 +44,13 @@ function getInitialForm(medicine) {
     }
   }
   const { month, year } = parseExpiry(medicine.expiry_date)
+  const isPreset = PRESET_UNITS.includes(medicine.unit)
   return {
     name: medicine.name || '',
     quantity: medicine.quantity !== undefined ? String(medicine.quantity) : '',
-    unit: medicine.unit || 'таблетки',
+    unit: isPreset ? medicine.unit : '__custom__',
+    unit_custom: isPreset ? '' : (medicine.unit || ''),
+    pack_count: medicine.pack_count ? String(medicine.pack_count) : '',
     location: medicine.location || '',
     expiry_month: month,
     expiry_year: year,
@@ -58,27 +63,37 @@ export default function FormScreen({
   t,
   medicine,
   locations,
+  customCategories,
   onSave,
   onCancel,
   onAddLocation,
+  onAddCategory,
 }) {
   const isEdit = !!medicine
   const [form, setForm] = useState(() => getInitialForm(medicine))
   const [errors, setErrors] = useState({})
   const [showNewLocation, setShowNewLocation] = useState(false)
   const [newLocation, setNewLocation] = useState('')
-  const [customCategory, setCustomCategory] = useState(
-    medicine && !CATEGORIES.includes(medicine.category) ? medicine.category : ''
-  )
+
+  const isCustomUnit = form.unit === '__custom__'
+  const isPackages = form.unit === 'упаковки'
+
+  const allCategories = [...CATEGORIES, ...customCategories.filter(c => !CATEGORIES.includes(c))]
   const [useCustomCategory, setUseCustomCategory] = useState(
-    medicine ? !CATEGORIES.includes(medicine.category) : false
+    medicine ? !allCategories.includes(medicine.category) : false
+  )
+  const [customCategory, setCustomCategory] = useState(
+    medicine && !allCategories.includes(medicine.category) ? medicine.category : ''
   )
 
   function setField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: null }))
-    }
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: null }))
+  }
+
+  function handleUnitChange(value) {
+    setField('unit', value)
+    if (value !== 'упаковки') setField('pack_count', '')
   }
 
   function handleLocationChange(value) {
@@ -116,7 +131,7 @@ export default function FormScreen({
     const errs = {}
     if (!form.name.trim()) errs.name = t['validation.name_required']
     if (form.quantity === '' || isNaN(Number(form.quantity))) errs.quantity = t['validation.quantity_required']
-    if (!form.expiry_month || !form.expiry_year) errs.expiry = t['validation.expiry_required']
+    if (isCustomUnit && !form.unit_custom.trim()) errs.unit_custom = 'Введите единицу'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -125,13 +140,19 @@ export default function FormScreen({
     e.preventDefault()
     if (!validate()) return
 
+    const finalCategory = useCustomCategory ? customCategory.trim() : form.category
+    if (useCustomCategory && customCategory.trim()) {
+      onAddCategory(customCategory.trim())
+    }
+
     const data = {
       name: form.name.trim(),
       quantity: Number(form.quantity),
-      unit: form.unit,
+      unit: isCustomUnit ? form.unit_custom.trim() : form.unit,
+      pack_count: isPackages && form.pack_count ? Number(form.pack_count) : undefined,
       location: form.location.trim(),
       expiry_date: buildExpiry(form.expiry_month, form.expiry_year),
-      category: useCustomCategory ? customCategory.trim() : form.category,
+      category: finalCategory,
       notes: form.notes.trim(),
     }
     onSave(data)
@@ -196,17 +217,41 @@ export default function FormScreen({
               </div>
               <select
                 value={form.unit}
-                onChange={(e) => setField('unit', e.target.value)}
+                onChange={(e) => handleUnitChange(e.target.value)}
                 className="h-11 border border-gray-300 rounded-lg px-3 w-36 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white"
               >
-                {UNITS.map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
+                {PRESET_UNITS.map((u) => (
+                  <option key={u} value={u}>{u}</option>
                 ))}
+                <option value="__custom__">Своя...</option>
               </select>
             </div>
+            {isCustomUnit && (
+              <input
+                type="text"
+                value={form.unit_custom}
+                onChange={(e) => setField('unit_custom', e.target.value)}
+                placeholder="Например: капсулы, саше, г"
+                className={`${inputClass('unit_custom')} mt-2`}
+              />
+            )}
+            {isPackages && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-sm text-gray-500 shrink-0">по</span>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={form.pack_count}
+                  onChange={(e) => setField('pack_count', e.target.value)}
+                  placeholder="10"
+                  className="h-11 border border-gray-300 rounded-lg px-3 w-24 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white"
+                />
+                <span className="text-sm text-gray-500">шт. в упаковке</span>
+              </div>
+            )}
             {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>}
+            {errors.unit_custom && <p className="text-red-500 text-xs mt-1">{errors.unit_custom}</p>}
           </div>
 
           {/* Location */}
@@ -219,9 +264,7 @@ export default function FormScreen({
             >
               <option value="">— Выберите место —</option>
               {locations.map((loc) => (
-                <option key={loc} value={loc}>
-                  {loc}
-                </option>
+                <option key={loc} value={loc}>{loc}</option>
               ))}
               <option value="__new__">{t['location.add_new']}</option>
             </select>
@@ -234,10 +277,7 @@ export default function FormScreen({
                   placeholder={t['location.new_placeholder']}
                   className="h-11 border border-gray-300 rounded-lg px-3 flex-1 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleNewLocationConfirm()
-                    }
+                    if (e.key === 'Enter') { e.preventDefault(); handleNewLocationConfirm() }
                   }}
                 />
                 <button
@@ -249,10 +289,7 @@ export default function FormScreen({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowNewLocation(false)
-                    setNewLocation('')
-                  }}
+                  onClick={() => { setShowNewLocation(false); setNewLocation('') }}
                   className="h-11 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 text-sm transition-colors"
                 >
                   ✕
@@ -261,14 +298,14 @@ export default function FormScreen({
             )}
           </div>
 
-          {/* Expiry date */}
+          {/* Expiry date — optional */}
           <div>
-            <label className="block text-sm text-gray-500 mb-1">{t['field.expiry']} *</label>
+            <label className="block text-sm text-gray-500 mb-1">{t['field.expiry']}</label>
             <div className="flex gap-2">
               <select
                 value={form.expiry_month}
                 onChange={(e) => setField('expiry_month', e.target.value ? Number(e.target.value) : '')}
-                className={`h-11 border rounded-lg px-3 flex-1 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white appearance-none ${errors.expiry ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                className="h-11 border border-gray-300 rounded-lg px-3 flex-1 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white appearance-none"
               >
                 <option value="">Месяц</option>
                 {MONTHS.map((name, i) => (
@@ -278,7 +315,7 @@ export default function FormScreen({
               <select
                 value={form.expiry_year}
                 onChange={(e) => setField('expiry_year', e.target.value ? Number(e.target.value) : '')}
-                className={`h-11 border rounded-lg px-3 w-28 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white appearance-none ${errors.expiry ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                className="h-11 border border-gray-300 rounded-lg px-3 w-28 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white appearance-none"
               >
                 <option value="">Год</option>
                 {YEARS.map((y) => (
@@ -286,9 +323,6 @@ export default function FormScreen({
                 ))}
               </select>
             </div>
-            {errors.expiry && (
-              <p className="text-red-500 text-xs mt-1">{errors.expiry}</p>
-            )}
           </div>
 
           {/* Category */}
@@ -299,10 +333,8 @@ export default function FormScreen({
               onChange={(e) => handleCategoryChange(e.target.value)}
               className={selectClass('category')}
             >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+              {allCategories.map((c) => (
+                <option key={c} value={c}>{c}</option>
               ))}
               <option value="__custom__">{t['category.custom']}</option>
             </select>

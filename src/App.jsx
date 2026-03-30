@@ -27,6 +27,7 @@ export default function App() {
   const [medicines, setMedicines] = useState(() => loadLS('medicines', []))
   const [shopping, setShopping] = useState(() => loadLS('shopping', []))
   const [locations, setLocations] = useState(() => loadLS('locations', DEFAULT_LOCATIONS))
+  const [customCategories, setCustomCategories] = useState(() => loadLS('customCategories', []))
   const [settings, setSettings] = useState(() => loadLS('settings', DEFAULT_SETTINGS))
   const [selectedId, setSelectedId] = useState(null)
   const [editId, setEditId] = useState(null) // null = add, id = edit
@@ -37,6 +38,7 @@ export default function App() {
   useEffect(() => saveLS('medicines', medicines), [medicines])
   useEffect(() => saveLS('shopping', shopping), [shopping])
   useEffect(() => saveLS('locations', locations), [locations])
+  useEffect(() => saveLS('customCategories', customCategories), [customCategories])
   useEffect(() => saveLS('settings', settings), [settings])
 
   // Medicine status helpers
@@ -111,6 +113,12 @@ export default function App() {
     }
   }
 
+  function addCustomCategory(cat) {
+    if (cat && !customCategories.includes(cat)) {
+      setCustomCategories((prev) => [...prev, cat])
+    }
+  }
+
   function removeShopping(id) {
     setShopping((prev) => prev.filter((s) => s.id !== id))
   }
@@ -154,9 +162,11 @@ export default function App() {
           {...commonProps}
           medicine={editId ? medicines.find((m) => m.id === editId) : null}
           locations={locations}
+          customCategories={customCategories}
           onSave={saveMedicine}
           onCancel={goList}
           onAddLocation={addLocation}
+          onAddCategory={addCustomCategory}
         />
       )}
       {screen === 'shopping' && (
