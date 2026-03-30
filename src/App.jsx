@@ -28,6 +28,7 @@ export default function App() {
   const [shopping, setShopping] = useState(() => loadLS('shopping', []))
   const [locations, setLocations] = useState(() => loadLS('locations', DEFAULT_LOCATIONS))
   const [customCategories, setCustomCategories] = useState(() => loadLS('customCategories', []))
+  const [customUnits, setCustomUnits] = useState(() => loadLS('customUnits', []))
   const [settings, setSettings] = useState(() => loadLS('settings', DEFAULT_SETTINGS))
   const [selectedId, setSelectedId] = useState(null)
   const [editId, setEditId] = useState(null) // null = add, id = edit
@@ -39,6 +40,7 @@ export default function App() {
   useEffect(() => saveLS('shopping', shopping), [shopping])
   useEffect(() => saveLS('locations', locations), [locations])
   useEffect(() => saveLS('customCategories', customCategories), [customCategories])
+  useEffect(() => saveLS('customUnits', customUnits), [customUnits])
   useEffect(() => saveLS('settings', settings), [settings])
 
   // Medicine status helpers
@@ -119,6 +121,12 @@ export default function App() {
     }
   }
 
+  function addCustomUnit(unit) {
+    if (unit && !customUnits.includes(unit)) {
+      setCustomUnits((prev) => [...prev, unit])
+    }
+  }
+
   function removeShopping(id) {
     setShopping((prev) => prev.filter((s) => s.id !== id))
   }
@@ -163,10 +171,12 @@ export default function App() {
           medicine={editId ? medicines.find((m) => m.id === editId) : null}
           locations={locations}
           customCategories={customCategories}
+          customUnits={customUnits}
           onSave={saveMedicine}
           onCancel={goList}
           onAddLocation={addLocation}
           onAddCategory={addCustomCategory}
+          onAddUnit={addCustomUnit}
         />
       )}
       {screen === 'shopping' && (

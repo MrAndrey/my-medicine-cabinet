@@ -64,10 +64,12 @@ export default function FormScreen({
   medicine,
   locations,
   customCategories,
+  customUnits,
   onSave,
   onCancel,
   onAddLocation,
   onAddCategory,
+  onAddUnit,
 }) {
   const isEdit = !!medicine
   const [form, setForm] = useState(() => getInitialForm(medicine))
@@ -145,10 +147,15 @@ export default function FormScreen({
       onAddCategory(customCategory.trim())
     }
 
+    const finalUnit = isCustomUnit ? form.unit_custom.trim() : form.unit
+    if (isCustomUnit && form.unit_custom.trim()) {
+      onAddUnit(form.unit_custom.trim())
+    }
+
     const data = {
       name: form.name.trim(),
       quantity: Number(form.quantity),
-      unit: isCustomUnit ? form.unit_custom.trim() : form.unit,
+      unit: finalUnit,
       pack_count: isPackages && form.pack_count ? Number(form.pack_count) : undefined,
       location: form.location.trim(),
       expiry_date: buildExpiry(form.expiry_month, form.expiry_year),
@@ -221,6 +228,9 @@ export default function FormScreen({
                 className="h-11 border border-gray-300 rounded-lg px-3 w-36 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white"
               >
                 {PRESET_UNITS.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+                {customUnits.filter(u => !PRESET_UNITS.includes(u)).map((u) => (
                   <option key={u} value={u}>{u}</option>
                 ))}
                 <option value="__custom__">Своя...</option>

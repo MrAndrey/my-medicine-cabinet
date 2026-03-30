@@ -56,7 +56,7 @@ function MedicineCard({ med, getMedicineStatus, t, onClick }) {
           </span>
         )}
         <span className="text-sm text-gray-600 font-medium">
-          {med.quantity} {med.unit}
+          {med.quantity} {med.unit}{med.pack_count ? ` по ${med.pack_count} шт.` : ''}
         </span>
       </div>
       {med.category && (
