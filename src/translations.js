@@ -90,4 +90,23 @@ export const t = {
   'validation.name_required': 'Введите название',
   'validation.quantity_required': 'Введите количество',
   'validation.expiry_required': 'Укажите срок годности',
+
+  // Welcome modal
+  'welcome.title': 'Добро пожаловать в Мою аптечку!',
+  'welcome.text': 'Здесь ты можешь вести домашнюю аптечку: упорядочить лекарства по местам хранения, быстро найти где что лежит, контролировать сроки годности и получать напоминания.',
+  'welcome.btn_start': 'Начать',
+  'welcome.btn_more': 'Узнать больше',
+  'welcome.btn_back': '← Назад',
+  'welcome.btn_close': 'Всё понятно, начать!',
+  'welcome.guide_title': 'Как пользоваться',
+  'welcome.guide_add_title': 'Добавить лекарство',
+  'welcome.guide_add_text': 'Нажми «Добавить лекарство» внизу экрана. Укажи название, количество, место хранения и срок годности — за 20 секунд.',
+  'welcome.guide_find_title': 'Найти где что лежит',
+  'welcome.guide_find_text': 'Используй поиск вверху — по названию или категории. На карточке сразу видно место хранения и сколько осталось.',
+  'welcome.guide_colors_title': 'Цвета карточек',
+  'welcome.guide_colors_text_white': 'Белая — всё в порядке',
+  'welcome.guide_colors_text_yellow': 'Жёлтая — срок истекает скоро',
+  'welcome.guide_colors_text_red': 'Красная — срок истёк',
+  'welcome.guide_shopping_title': 'Список покупок',
+  'welcome.guide_shopping_text': 'При удалении лекарства или когда количество дойдёт до нуля, можно добавить его в список покупок — чтобы не забыть купить.',
 }

@@ -5,6 +5,7 @@ import ListScreen from './screens/ListScreen'
 import DetailsScreen from './screens/DetailsScreen'
 import FormScreen from './screens/FormScreen'
 import ShoppingScreen from './screens/ShoppingScreen'
+import WelcomeModal from './components/WelcomeModal'
 
 const DEFAULT_LOCATIONS = ['Шкаф в ванной', 'Комод', 'Аптечка на кухне']
 const DEFAULT_SETTINGS = { expiry_warning_days: 7 }
@@ -34,6 +35,7 @@ export default function App() {
   const [editId, setEditId] = useState(null) // null = add, id = edit
   const [filterProblematic, setFilterProblematic] = useState(false)
   const [search, setSearch] = useState('')
+  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('welcomeShown'))
 
   // Persist to localStorage
   useEffect(() => saveLS('medicines', medicines), [medicines])
@@ -136,6 +138,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 max-w-lg mx-auto">
+      {showWelcome && (
+        <WelcomeModal
+          t={t}
+          onClose={() => {
+            localStorage.setItem('welcomeShown', '1')
+            setShowWelcome(false)
+          }}
+        />
+      )}
       {screen === 'list' && (
         <ListScreen
           {...commonProps}
