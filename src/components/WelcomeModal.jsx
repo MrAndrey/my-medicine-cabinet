@@ -14,7 +14,7 @@ function MedIcon() {
   )
 }
 
-function Page1({ t, onStart, onMore }) {
+function Page1({ t, onStart, onMore, onNeverShow }) {
   return (
     <>
       <div className="flex justify-center mb-5">
@@ -38,6 +38,12 @@ function Page1({ t, onStart, onMore }) {
           className="w-full h-11 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors text-sm"
         >
           {t['welcome.btn_more']}
+        </button>
+        <button
+          onClick={onNeverShow}
+          className="w-full h-9 text-gray-400 hover:text-gray-600 text-xs transition-colors"
+        >
+          {t['welcome.btn_never']}
         </button>
       </div>
     </>
@@ -65,7 +71,7 @@ function GuideItem({ icon, title, children }) {
   )
 }
 
-function Page2({ t, onBack, onClose }) {
+function Page2({ t, onBack, onClose, onNeverShow }) {
   return (
     <>
       <div className="flex items-center gap-2 mb-5">
@@ -106,17 +112,25 @@ function Page2({ t, onBack, onClose }) {
         </GuideItem>
       </div>
 
-      <button
-        onClick={onClose}
-        className="w-full h-12 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl transition-colors text-base"
-      >
-        {t['welcome.btn_close']}
-      </button>
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={onClose}
+          className="w-full h-12 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl transition-colors text-base"
+        >
+          {t['welcome.btn_close']}
+        </button>
+        <button
+          onClick={onNeverShow}
+          className="w-full h-9 text-gray-400 hover:text-gray-600 text-xs transition-colors"
+        >
+          {t['welcome.btn_never']}
+        </button>
+      </div>
     </>
   )
 }
 
-export default function WelcomeModal({ t, onClose }) {
+export default function WelcomeModal({ t, onClose, onNeverShow }) {
   const [page, setPage] = useState(1)
 
   return (
@@ -127,9 +141,9 @@ export default function WelcomeModal({ t, onClose }) {
       {/* Card */}
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
         {page === 1 ? (
-          <Page1 t={t} onStart={onClose} onMore={() => setPage(2)} />
+          <Page1 t={t} onStart={onClose} onMore={() => setPage(2)} onNeverShow={onNeverShow} />
         ) : (
-          <Page2 t={t} onBack={() => setPage(1)} onClose={onClose} />
+          <Page2 t={t} onBack={() => setPage(1)} onClose={onClose} onNeverShow={onNeverShow} />
         )}
       </div>
     </div>

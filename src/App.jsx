@@ -141,7 +141,8 @@ export default function App() {
       {showWelcome && (
         <WelcomeModal
           t={t}
-          onClose={() => {
+          onClose={() => setShowWelcome(false)}
+          onNeverShow={() => {
             localStorage.setItem('welcomeShown', '1')
             setShowWelcome(false)
           }}

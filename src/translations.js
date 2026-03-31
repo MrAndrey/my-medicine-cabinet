@@ -98,6 +98,7 @@ export const t = {
   'welcome.btn_more': 'Узнать больше',
   'welcome.btn_back': '← Назад',
   'welcome.btn_close': 'Всё понятно, начать!',
+  'welcome.btn_never': 'Больше не показывать',
   'welcome.guide_title': 'Как пользоваться',
   'welcome.guide_add_title': 'Добавить лекарство',
   'welcome.guide_add_text': 'Нажми «Добавить лекарство» внизу экрана. Укажи название, количество, место хранения и срок годности — за 20 секунд.',
