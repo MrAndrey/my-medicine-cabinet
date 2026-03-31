@@ -79,7 +79,12 @@ export const t = {
 
   // Navigation
   'nav.list': 'Аптечка',
+  'nav.locations': 'Где лежит',
   'nav.shopping': 'Покупки',
+
+  // Locations screen
+  'locations.title': 'Что где лежит',
+  'locations.empty': 'Нет лекарств с указанным местом хранения',
 
   // Expiry display
   'expiry.days_left': (n) => `${n} дн.`,

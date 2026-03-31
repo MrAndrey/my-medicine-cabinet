@@ -5,7 +5,9 @@ import ListScreen from './screens/ListScreen'
 import DetailsScreen from './screens/DetailsScreen'
 import FormScreen from './screens/FormScreen'
 import ShoppingScreen from './screens/ShoppingScreen'
+import LocationsScreen from './screens/LocationsScreen'
 import WelcomeModal from './components/WelcomeModal'
+import BottomNav from './components/BottomNav'
 
 const DEFAULT_LOCATIONS = ['Шкаф в ванной', 'Комод', 'Аптечка на кухне']
 const DEFAULT_SETTINGS = { expiry_warning_days: 7 }
@@ -159,8 +161,6 @@ export default function App() {
           problematicCount={getProblematicCount()}
           onOpenDetails={openDetails}
           onAdd={openAdd}
-          onOpenShopping={() => setScreen('shopping')}
-          shoppingCount={shopping.length}
         />
       )}
       {screen === 'details' && (
@@ -191,12 +191,27 @@ export default function App() {
           onAddUnit={addCustomUnit}
         />
       )}
+      {screen === 'locations' && (
+        <LocationsScreen
+          {...commonProps}
+          medicines={medicines}
+          onOpenDetails={openDetails}
+        />
+      )}
       {screen === 'shopping' && (
         <ShoppingScreen
           {...commonProps}
           shopping={shopping}
           onBack={goList}
           onBought={removeShopping}
+        />
+      )}
+      {['list', 'locations', 'shopping'].includes(screen) && (
+        <BottomNav
+          t={t}
+          screen={screen}
+          onNavigate={setScreen}
+          shoppingCount={shopping.length}
         />
       )}
     </div>

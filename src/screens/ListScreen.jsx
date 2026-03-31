@@ -79,8 +79,6 @@ export default function ListScreen({
   problematicCount,
   onOpenDetails,
   onAdd,
-  onOpenShopping,
-  shoppingCount,
 }) {
   const filtered = medicines.filter((med) => {
     const query = search.toLowerCase()
@@ -96,20 +94,7 @@ export default function ListScreen({
     <div className="flex flex-col min-h-screen">
       {/* Top bar */}
       <div className="bg-white shadow-sm sticky top-0 z-10 py-4 px-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">{t['app.title']}</h1>
-          <button
-            onClick={onOpenShopping}
-            className="relative flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 h-11 text-sm font-medium transition-colors"
-          >
-            🛒 {t['btn.shopping_list']}
-            {shoppingCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                {shoppingCount}
-              </span>
-            )}
-          </button>
-        </div>
+        <h1 className="text-xl font-bold text-gray-900">{t['app.title']}</h1>
       </div>
 
       <div className="flex-1 px-4 pt-4 pb-24">
