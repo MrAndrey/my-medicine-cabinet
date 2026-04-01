@@ -97,7 +97,7 @@ export default function ListScreen({
         <h1 className="text-xl font-bold text-gray-900">{t['app.title']}</h1>
       </div>
 
-      <div className="flex-1 px-4 pt-4 pb-24">
+      <div className="flex-1 px-4 pt-4 pb-36">
         {/* Problematic badge */}
         {problematicCount > 0 && (
           <div className="mb-3">
@@ -162,8 +162,8 @@ export default function ListScreen({
         ))}
       </div>
 
-      {/* Fixed bottom add button */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg px-4 pb-4 pt-2 bg-gradient-to-t from-gray-50 to-transparent">
+      {/* Fixed bottom add button — sits above the tab bar (~64px) */}
+      <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-lg px-4 pb-2 pt-2 z-20">
         <button
           onClick={onAdd}
           className="w-full h-12 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl shadow-md transition-colors text-base"
