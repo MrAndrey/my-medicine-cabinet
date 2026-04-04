@@ -97,14 +97,9 @@ export default function FormScreen({
     setVoiceStatus('processing')
     setVoiceError('')
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/claude', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 256,
@@ -114,7 +109,11 @@ export default function FormScreen({
           }],
         }),
       })
-      if (!res.ok) throw new Error('api')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        console.error('Claude API error:', res.status, err)
+        throw new Error('api')
+      }
       const data = await res.json()
       const json = JSON.parse(data.content[0].text)
       if (json.name) setField('name', json.name)
