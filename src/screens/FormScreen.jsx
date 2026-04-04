@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import dayjs from 'dayjs'
 
 const PRESET_UNITS = ['таблетки', 'мл', 'упаковки', 'флакон']
@@ -87,6 +87,87 @@ export default function FormScreen({
   const [customCategory, setCustomCategory] = useState(
     medicine && !allCategories.includes(medicine.category) ? medicine.category : ''
   )
+
+  // Voice input
+  const [voiceStatus, setVoiceStatus] = useState('idle') // 'idle'|'recording'|'processing'
+  const [voiceError, setVoiceError] = useState('')
+  const recognitionRef = useRef(null)
+
+  async function extractFromVoice(transcript) {
+    setVoiceStatus('processing')
+    setVoiceError('')
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 256,
+          messages: [{
+            role: 'user',
+            content: `Извлеки из текста данные о лекарстве и верни строго JSON без markdown:\n{"name": "...", "quantity": number, "unit": "...", "expiry_month": number, "expiry_year": number}\nЕсли поле не упомянуто — верни null. Единицы: таблетки, мл, упаковки, шт, капсулы, флакон.\n\nТекст: "${transcript}"`,
+          }],
+        }),
+      })
+      if (!res.ok) throw new Error('api')
+      const data = await res.json()
+      const json = JSON.parse(data.content[0].text)
+      if (json.name) setField('name', json.name)
+      if (json.quantity !== null && json.quantity !== undefined) setField('quantity', String(json.quantity))
+      if (json.unit) {
+        const u = json.unit.toLowerCase()
+        if (PRESET_UNITS.includes(u)) {
+          setField('unit', u)
+          if (u !== 'упаковки') setField('pack_count', '')
+        } else {
+          setField('unit', '__custom__')
+          setField('unit_custom', json.unit)
+        }
+      }
+      if (json.expiry_month) setField('expiry_month', json.expiry_month)
+      if (json.expiry_year) setField('expiry_year', json.expiry_year)
+      setVoiceStatus('idle')
+    } catch {
+      setVoiceStatus('idle')
+      setVoiceError(t['voice.api_error'])
+    }
+  }
+
+  function handleMicClick() {
+    if (voiceStatus === 'processing') return
+    if (voiceStatus === 'recording') {
+      recognitionRef.current?.stop()
+      return
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) {
+      setVoiceError(t['voice.unsupported'])
+      return
+    }
+    setVoiceError('')
+    const recognition = new SR()
+    recognition.lang = 'ru-RU'
+    recognition.interimResults = false
+    recognitionRef.current = recognition
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript
+      extractFromVoice(transcript)
+    }
+    recognition.onerror = () => {
+      setVoiceStatus('idle')
+      setVoiceError(t['voice.error'])
+    }
+    recognition.onend = () => {
+      setVoiceStatus((prev) => (prev === 'recording' ? 'idle' : prev))
+    }
+    recognition.start()
+    setVoiceStatus('recording')
+  }
 
   function setField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -185,10 +266,37 @@ export default function FormScreen({
         >
           {t['btn.back']}
         </button>
-        <h2 className="text-lg font-bold text-gray-900">
+        <h2 className="text-lg font-bold text-gray-900 flex-1">
           {isEdit ? t['screen.form_edit'] : t['screen.form_add']}
         </h2>
+        {/* Mic button — space left of it reserved for future camera button */}
+        <button
+          type="button"
+          onClick={handleMicClick}
+          disabled={voiceStatus === 'processing'}
+          className={`w-11 h-11 flex items-center justify-center rounded-full transition-colors shrink-0 ${
+            voiceStatus === 'recording'
+              ? 'bg-red-100 text-red-600 animate-pulse'
+              : voiceStatus === 'processing'
+              ? 'bg-gray-100 text-gray-400'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300'
+          }`}
+          title={voiceStatus === 'recording' ? 'Остановить' : 'Голосовой ввод'}
+        >
+          {voiceStatus === 'processing' ? '⏳' : '🎤'}
+        </button>
       </div>
+
+      {/* Voice status bar */}
+      {(voiceStatus === 'recording' || voiceStatus === 'processing' || voiceError) && (
+        <div className={`px-4 py-2 text-sm text-center ${
+          voiceError
+            ? 'bg-red-50 text-red-600'
+            : 'bg-green-50 text-green-700'
+        }`}>
+          {voiceError || (voiceStatus === 'recording' ? t['voice.recording'] : t['voice.processing'])}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex-1 px-4 pt-5 pb-8">
         <div className="flex flex-col gap-4">
