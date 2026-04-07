@@ -97,10 +97,6 @@ export const t = {
   'validation.expiry_required': 'Укажите срок годности',
 
   // Voice input
-  'voice.recording': 'Слушаю... Назовите лекарство',
-  'voice.processing': 'Распознаю...',
-  'voice.unsupported': 'Голосовой ввод не поддерживается в этом браузере',
-  'voice.error': 'Ошибка распознавания. Попробуйте ещё раз.',
   'voice.api_error': 'Не удалось обработать. Проверьте подключение.',
 
   // Welcome modal

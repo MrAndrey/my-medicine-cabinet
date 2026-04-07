@@ -89,12 +89,22 @@ export default function FormScreen({
   )
 
   // Voice input
-  const [voiceStatus, setVoiceStatus] = useState('idle') // 'idle'|'recording'|'processing'
+  const [voiceOpen, setVoiceOpen] = useState(false)
+  const [voiceText, setVoiceText] = useState('')
+  const [voiceProcessing, setVoiceProcessing] = useState(false)
   const [voiceError, setVoiceError] = useState('')
-  const recognitionRef = useRef(null)
+  const voiceInputRef = useRef(null)
 
-  async function extractFromVoice(transcript) {
-    setVoiceStatus('processing')
+  function handleMicClick() {
+    setVoiceOpen((prev) => !prev)
+    setVoiceText('')
+    setVoiceError('')
+  }
+
+  async function handleVoiceRecognize() {
+    const transcript = voiceText.trim()
+    if (!transcript) return
+    setVoiceProcessing(true)
     setVoiceError('')
     try {
       const res = await fetch('/api/claude', {
@@ -117,8 +127,8 @@ export default function FormScreen({
       const data = await res.json()
       const json = JSON.parse(data.content[0].text)
       if (json.error === 'not_medicine') {
-        setVoiceStatus('idle')
         setVoiceError('Не похоже на лекарство. Попробуйте ещё раз.')
+        setVoiceProcessing(false)
         return
       }
       if (json.name) setField('name', json.name)
@@ -136,42 +146,13 @@ export default function FormScreen({
       if (json.expiry_month) setField('expiry_month', json.expiry_month)
       if (json.expiry_year) setField('expiry_year', json.expiry_year)
       if (json.location) setField('location', json.location)
-      setVoiceStatus('idle')
+      setVoiceOpen(false)
+      setVoiceText('')
+      setVoiceProcessing(false)
     } catch {
-      setVoiceStatus('idle')
+      setVoiceProcessing(false)
       setVoiceError(t['voice.api_error'])
     }
-  }
-
-  function handleMicClick() {
-    if (voiceStatus === 'processing') return
-    if (voiceStatus === 'recording') {
-      recognitionRef.current?.stop()
-      return
-    }
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SR) {
-      setVoiceError(t['voice.unsupported'])
-      return
-    }
-    setVoiceError('')
-    const recognition = new SR()
-    recognition.lang = 'ru-RU'
-    recognition.interimResults = false
-    recognitionRef.current = recognition
-    recognition.onresult = (e) => {
-      const transcript = e.results[0][0].transcript
-      extractFromVoice(transcript)
-    }
-    recognition.onerror = () => {
-      setVoiceStatus('idle')
-      setVoiceError(t['voice.error'])
-    }
-    recognition.onend = () => {
-      setVoiceStatus((prev) => (prev === 'recording' ? 'idle' : prev))
-    }
-    recognition.start()
-    setVoiceStatus('recording')
   }
 
   function setField(field, value) {
@@ -274,32 +255,54 @@ export default function FormScreen({
         <h2 className="text-lg font-bold text-gray-900 flex-1">
           {isEdit ? t['screen.form_edit'] : t['screen.form_add']}
         </h2>
-        {/* Mic button — space left of it reserved for future camera button */}
+        {/* Mic button */}
         <button
           type="button"
           onClick={handleMicClick}
-          disabled={voiceStatus === 'processing'}
           className={`w-11 h-11 flex items-center justify-center rounded-full transition-colors shrink-0 ${
-            voiceStatus === 'recording'
-              ? 'bg-red-100 text-red-600 animate-pulse'
-              : voiceStatus === 'processing'
-              ? 'bg-gray-100 text-gray-400'
+            voiceOpen
+              ? 'bg-green-100 text-green-700'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300'
           }`}
-          title={voiceStatus === 'recording' ? 'Остановить' : 'Голосовой ввод'}
+          title="Голосовой ввод"
         >
-          {voiceStatus === 'processing' ? '⏳' : '🎤'}
+          🎤
         </button>
       </div>
 
-      {/* Voice status bar */}
-      {(voiceStatus === 'recording' || voiceStatus === 'processing' || voiceError) && (
-        <div className={`px-4 py-2 text-sm text-center ${
-          voiceError
-            ? 'bg-red-50 text-red-600'
-            : 'bg-green-50 text-green-700'
-        }`}>
-          {voiceError || (voiceStatus === 'recording' ? t['voice.recording'] : t['voice.processing'])}
+      {/* Voice input panel */}
+      {voiceOpen && (
+        <div className="bg-green-50 border-b border-green-200 px-4 py-3 flex flex-col gap-2">
+          <p className="text-xs text-green-700">
+            Нажмите микрофон на клавиатуре и говорите. Например: «Парацетамол, 13 таблеток, срок до ноября 2029, лежит в шкафу»
+          </p>
+          <textarea
+            ref={voiceInputRef}
+            value={voiceText}
+            onChange={(e) => { setVoiceText(e.target.value); setVoiceError('') }}
+            placeholder="Текст появится здесь..."
+            rows={2}
+            autoFocus
+            className="border border-green-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white resize-none"
+          />
+          {voiceError && <p className="text-xs text-red-600">{voiceError}</p>}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleVoiceRecognize}
+              disabled={voiceProcessing || !voiceText.trim()}
+              className="flex-1 h-10 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              {voiceProcessing ? '⏳ Распознаю...' : 'Распознать'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setVoiceOpen(false); setVoiceText(''); setVoiceError('') }}
+              className="h-10 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition-colors"
+            >
+              Отмена
+            </button>
+          </div>
         </div>
       )}
 
