@@ -1,4 +1,4 @@
-const CACHE = 'aptechka-v1';
+const CACHE = 'aptechka-v2';
 const ASSETS = ['./index.html'];
 
 self.addEventListener('install', e => {
