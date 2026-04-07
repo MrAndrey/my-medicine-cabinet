@@ -105,7 +105,7 @@ export default function FormScreen({
           max_tokens: 256,
           messages: [{
             role: 'user',
-            content: `Извлеки из текста данные о лекарстве и верни строго JSON без markdown:\n{"name": "...", "quantity": number, "unit": "...", "expiry_month": number, "expiry_year": number}\nЕсли поле не упомянуто — верни null. Единицы: таблетки, мл, упаковки, шт, капсулы, флакон.\n\nТекст: "${transcript}"`,
+            content: `Извлеки из текста данные о лекарстве и верни строго JSON без markdown:\n{"name": "...", "quantity": number, "unit": "...", "expiry_month": number, "expiry_year": number, "location": "..."}\nЕсли поле не упомянуто — верни null. Единицы: таблетки, мл, упаковки, шт, капсулы, флакон, бинт.\nЕсли текст не относится к медикаментам — верни {"error": "not_medicine"}\n\nТекст: "${transcript}"`,
           }],
         }),
       })
@@ -116,6 +116,11 @@ export default function FormScreen({
       }
       const data = await res.json()
       const json = JSON.parse(data.content[0].text)
+      if (json.error === 'not_medicine') {
+        setVoiceStatus('idle')
+        setVoiceError('Не похоже на лекарство. Попробуйте ещё раз.')
+        return
+      }
       if (json.name) setField('name', json.name)
       if (json.quantity !== null && json.quantity !== undefined) setField('quantity', String(json.quantity))
       if (json.unit) {
@@ -130,6 +135,7 @@ export default function FormScreen({
       }
       if (json.expiry_month) setField('expiry_month', json.expiry_month)
       if (json.expiry_year) setField('expiry_year', json.expiry_year)
+      if (json.location) setField('location', json.location)
       setVoiceStatus('idle')
     } catch {
       setVoiceStatus('idle')
