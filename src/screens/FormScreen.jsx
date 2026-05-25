@@ -111,9 +111,10 @@ export default function FormScreen({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-5',
           max_tokens: 256,
           messages: [{
+            
             role: 'user',
             content: `Извлеки из текста данные о лекарстве и верни строго JSON без markdown:\n{"name": "...", "quantity": number, "unit": "...", "expiry_month": number, "expiry_year": number, "location": "..."}\nЕсли поле не упомянуто — верни null. Единицы: таблетки, мл, упаковки, шт, капсулы, флакон, бинт.\nЕсли текст не относится к медикаментам — верни {"error": "not_medicine"}\n\nТекст: "${transcript}"`,
           }],
